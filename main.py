@@ -1,8 +1,17 @@
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from starlette import status
 
-from src.data_access.session import lifespan, init_db, create_database_url
+from src.api.contracts.create_department import CreateDepartment as apiCreateDepartment, ResponseCreateDepartment
+from src.api.contracts.create_employee import CreateEmployee as apiCreateEmployee, ResponseCreateEmployee
+from src.api.contracts.delete_department import DepartmentDeleteRequest
+from src.api.contracts.move_department import MoveDepartment as apiMoveDepartment, ResponseMoveDepartment
+from src.application.services.departments_service import DepartmentsService, DeleteMode
+from src.application.services.employees_service import EmployeesService
 from src.config import Config
+from src.core.models.department import CreateDepartment, UpdateDepartment
+from src.core.models.employee import CreateEmployee
+from src.data_access.session import lifespan, init_db, create_database_url
 
 app = FastAPI(
     title="Department",
@@ -17,29 +26,119 @@ async def health_check():
     return {"status": "ok"}
 
 @app.post("/departments")
-async def departments():
+async def departments(
+    new_depart: apiCreateDepartment,
+    depart_service: DepartmentsService = Depends(DepartmentsService),
+) -> ResponseCreateDepartment:
     """Создать подразделение"""
-    pass
+    create_depart = CreateDepartment(
+        name=new_depart.name,
+        parent_id=new_depart.parent_id,
+    )
+
+    result = await depart_service.create_department(create_depart)
+
+    response = ResponseCreateDepartment(
+        id=result.id,
+        name=result.name,
+        parent_id=result.parent_id,
+        created_at=result.created_at,
+    )
+
+    return response
 
 @app.post("/departments/{id}/employees")
-async def create_employees_in_department(id: int):
+async def create_employees_in_department(
+    id: int,
+    create_employee: apiCreateEmployee,
+    employees_service: EmployeesService = Depends(EmployeesService),
+) -> ResponseCreateEmployee:
     """Создать сотрудника в подразделении"""
-    pass
+    create_employee = CreateEmployee(
+        department_id=id,
+        full_name=create_employee.full_name,
+        position=create_employee.position,
+        hired_at=create_employee.hired_at,
+    )
+
+    result = await employees_service.create_employee(create_employee)
+
+    response = ResponseCreateEmployee(
+        id=result.id,
+        department_id=result.department_id,
+        full_name=result.full_name,
+        position=result.position,
+        hired_at=result.hired_at,
+        created_at=result.created_at,
+    )
+
+    return response
 
 @app.get("/departments/{id}")
-async def get_department_by_id(id: int):
+async def get_department_by_id(
+    id: int,
+    query:
+):
     """"Получить подразделение (детали + сотрудники + поддерево)"""
     pass
 
 @app.patch("/departments/{id}")
-async def department_move(id: int):
+async def department_move(
+    id: int,
+    move_department: apiMoveDepartment,
+    depart_service: DepartmentsService = Depends(DepartmentsService),
+) -> ResponseMoveDepartment:
     """Переместить подразделение в другое (изменить parent)"""
-    pass
+    update_depart = UpdateDepartment(
+        department_id=id,
+        name=move_department.name,
+        parent_id=move_department.parent_id,
+    )
+
+    result = await depart_service.update_department(update_depart)
+
+    response = ResponseMoveDepartment(
+        id=result.id,
+        name=result.name,
+        parent_id=result.parent_id,
+        created_at=result.created_at,
+    )
+
+    return response
 
 @app.delete("/departments/{id}")
-async def department_remove(id: int):
+async def department_remove(
+    id: int,
+    query: DepartmentDeleteRequest,
+    depart_service: DepartmentsService = Depends(DepartmentsService),
+):
     """Удалить подразделение"""
-    pass
+    mode = query.mode
+    result: str | None = None
+
+    if mode == "cascade":
+        result = await depart_service.delete_department(
+            department_id=id,
+            mode=DeleteMode.CASCADE,
+            reassign_to_department_id=query.reassign_to_department_id
+        )
+    elif mode == "reassign":
+        result = await depart_service.delete_department(
+            department_id=id,
+            mode=DeleteMode.REASSIGN,
+            reassign_to_department_id=query.reassign_to_department_id
+        )
+    else:
+        return status.HTTP_400_BAD_REQUEST
+
+    if result is not None and len(result) > 0:
+        return HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=result
+        )
+    else:
+        return status.HTTP_204_NO_CONTENT
+
 
 def main():
     """Точка входа для запуска приложения"""

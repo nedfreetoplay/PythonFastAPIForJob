@@ -5,8 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.abstractions.employee_repo_protocol import EmployeeRepositoryProtocol
 from src.core.models.employee import CreateEmployee, ReadEmployee
-from src.data_access.entities.entities import Department
-from src.data_access.entities.employee import Employee
+from src.data_access.entities.entities import Department, Employee
 
 
 class EmployeeRepository(EmployeeRepositoryProtocol):
@@ -93,7 +92,6 @@ class EmployeeRepository(EmployeeRepositoryProtocol):
             select(Department).where(Department.id == employee_id)
         )
         return result.scalar_one_or_none() is not None
-
 
     async def delete(self, employee_id: int) -> bool:
         stmt = delete(Employee).where(Employee.id == employee_id)

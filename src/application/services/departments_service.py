@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List
 
-from src.core.models.department import CreateDepartment, ReadDepartment, create_department
+from src.core.models.department import CreateDepartment, ReadDepartment, create_department, UpdateDepartment
 from src.data_access.context import DbContext
 
 
@@ -21,16 +21,8 @@ class DepartmentsService:
     async def get_department(self, department_id: int) -> ReadDepartment:
         return await self.db.department.get_by_id(department_id)
 
-    async def update_department(self, department_id: int, department_name: str | None, parent_id: int | None) -> ReadDepartment:
-
-        # Меняем название, но названием не может быть None, так что проверяем что мы хотим изменить название.
-        if department_name is not None:
-            await self.db.department.set_name(department_id, department_name)
-
-        # Нам все равно изменился ли parent у подразделения.
-        await self.db.department.set_parent_id(department_id, parent_id)
-
-        return await self.db.department.get_by_id(department_id)
+    async def update_department(self, depart: UpdateDepartment) -> ReadDepartment:
+        return await self.db.department.update(depart)
 
     async def delete_department(
         self,
@@ -40,18 +32,36 @@ class DepartmentsService:
     ) -> str:
 
         errors: List[str] = []
+        result = None
 
         if mode == DeleteMode.REASSIGN:
             if reassign_to_department_id is None:
-                errors.append("if mode == REASSIGN then reassign_to_department_id cannot be None")
-            is_exists = await self.db.department.get_by_id(department_id)
+                errors.append("reassign_to_department_id cannot be None")
+            is_exists = await self.db.department.is_exists(department_id)
             if is_exists is None:
                 errors.append("department with id {} does not exist".format(department_id))
-        elif mode == DeleteMode.CASCADE:
-            pass
-        # list_employees = await self.db.employee.get_all_employees_into_department(department_id)
-            #TODO: Продолжить!
-        # Удаляем подразделение
-        await self.db.department.delete(department_id)
 
-        return ''
+            # Меняем у сотрудников подразделение
+            employees = await self.db.employee.get_all_employees_into_department(department_id)
+            for employee in employees:
+                employee.department_id = reassign_to_department_id
+
+            # Удаляем ненужное нам подразделение
+            result = await self.db.department.delete_without_cascade(department_id)
+
+        elif mode == DeleteMode.CASCADE:
+            result = await self.db.department.delete_with_cascade(department_id)
+
+        if result is not None and result == False:
+            errors.append("couldn't delete Department, id {}".format(department_id))
+
+        errors_str = '\n'.join(errors)
+        return errors_str
+
+
+
+
+
+
+
+
