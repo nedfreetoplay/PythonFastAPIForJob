@@ -61,7 +61,7 @@ class DepartmentRepository(DepartmentRepositoryProtocol):
         update_values = {}
         if depart.need_update_name and depart.name is not None:
             update_values['name'] = depart.name
-        if depart.need_update_parent_id and depart.parent_id is not None:
+        if depart.need_update_parent_id:
             update_values['parent_id'] = depart.parent_id
 
         result = await self.session.execute(
