@@ -1,4 +1,4 @@
-from typing import Protocol, Optional
+from typing import Protocol, Optional, List
 
 from src.core.models.department import CreateDepartment, ReadDepartment, UpdateDepartment
 
@@ -11,6 +11,10 @@ class DepartmentRepositoryProtocol(Protocol):
 
     async def get_by_id(self, department_id: int) -> Optional[ReadDepartment]:
         """Поиск подразделения по id."""
+        ...
+
+    async def get_children(self, department_id: int) -> List[ReadDepartment]:
+        """Поиск дочерних подразделений"""
         ...
 
     async def is_exists(self, department_id: int) -> bool:

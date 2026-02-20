@@ -21,6 +21,9 @@ class DepartmentsService:
     async def get_department(self, department_id: int) -> ReadDepartment:
         return await self.db.department.get_by_id(department_id)
 
+    async def get_department_children(self, department_id: int) -> List[ReadDepartment]:
+        return await self.db.department.get_children(department_id)
+
     async def update_department(self, depart: UpdateDepartment) -> ReadDepartment:
         return await self.db.department.update(depart)
 

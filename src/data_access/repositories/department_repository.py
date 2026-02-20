@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,6 +50,25 @@ class DepartmentRepository(DepartmentRepositoryProtocol):
         )
 
         return read_department
+
+    async def get_children(self, department_id: int) -> List[ReadDepartment]:
+        result = await self.session.execute(
+            select(Department).where(Department.parent_id == department_id)
+        )
+        children_raw = result.scalars()
+
+        children: List[ReadDepartment] = []
+
+        for child in children_raw:
+            depart = ReadDepartment(
+                id = child.id,
+                name = child.name,
+                parent_id = child.parent_id,
+                created_at = child.created_at,
+            )
+            children.append(depart)
+
+        return children
 
     async def is_exists(self, department_id: int) -> bool:
         result = await self.session.execute(
