@@ -13,6 +13,8 @@ from sqlalchemy.ext.asyncio import (
 _engine: AsyncEngine | None = None
 _async_session_maker: async_sessionmaker[AsyncSession] | None = None
 
+def create_database_url(username: str, password: str, host: str) -> str:
+    return f"postgresql+asyncpg://{username}:{password}@{host}"
 
 def init_db(database_url: str) -> None:
     """
@@ -93,13 +95,10 @@ async def lifespan(app: FastAPI):
 
     Использование:
     ```python
-    from src.database.session import lifespan
+    from src.data_access.session import lifespan
     app = FastAPI(lifespan=lifespan)
     ```
     """
-    # Startup
-    init_db("postgresql+asyncpg://user:password@localhost/dbname")
-
     yield # FastAPI работает
 
     # Shutdown
