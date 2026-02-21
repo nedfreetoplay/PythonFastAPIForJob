@@ -89,7 +89,7 @@ class EmployeeRepository(EmployeeRepositoryProtocol):
 
     async def is_exists(self, employee_id: int) -> bool:
         result = await self.session.execute(
-            select(Department).where(Department.id == employee_id)
+            select(Employee).where(Employee.id == employee_id)
         )
         return result.scalar_one_or_none() is not None
 

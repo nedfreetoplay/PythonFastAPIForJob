@@ -224,7 +224,7 @@ async def department_remove(
         )
 
         if errors:
-            return HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=errors
             )

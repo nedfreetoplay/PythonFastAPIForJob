@@ -113,12 +113,13 @@ class DepartmentRepository(DepartmentRepositoryProtocol):
         # Если новый родитель среди потомков - будет цикл
         return new_parent_id in descendants
 
-
     async def update(self, department_id: int, depart: UpdateDepartment) -> ReadDepartment:
         d = await self.session.execute(
             select(Department).where(Department.id == department_id)
         )
         dept: Department | None = d.scalar_one_or_none()
+        if dept is None:
+            raise ValueError(f'ID: {department_id}, такое подразделение не найдено!')
 
         update_values = {}
         if depart.name is not None and dept.name != depart.name:
@@ -132,7 +133,13 @@ class DepartmentRepository(DepartmentRepositoryProtocol):
             .values(**update_values)
             .returning(Department)
         )
-        return result.scalar_one_or_none()
+
+        r = result.scalar_one_or_none()
+
+        if r is None:
+            raise ValueError(f'ID: {department_id}, такое подразделение не найдено!')
+
+        return r
 
     async def delete_with_cascade(self, department_id: int) -> bool:
         result = await self.session.execute(

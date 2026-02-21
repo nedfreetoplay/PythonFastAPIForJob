@@ -26,7 +26,7 @@ class Department(Base):
     )
 
     # Самосвязь
-    children: Mapped[list[Department]] = relationship(
+    children: Mapped[list["Department"]] = relationship(
         "Department",
         back_populates="parent",
         cascade="all, delete-orphan",
@@ -34,14 +34,14 @@ class Department(Base):
         lazy='selectin',
     )
 
-    parent: Mapped[Department] = relationship(
+    parent: Mapped["Department"] = relationship(
         "Department",
         back_populates="children",
         remote_side=[id],
         lazy="joined",
     )
 
-    employees: Mapped[list[Employee]] = relationship(
+    employees: Mapped[list["Employee"]] = relationship(
         back_populates="department",
         cascade='all, delete-orphan',
         passive_deletes=True,

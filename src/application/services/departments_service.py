@@ -44,8 +44,11 @@ class DepartmentsService(DepartmentsServiceProtocol):
             if reassign_to_department_id is None:
                 errors.append("reassign_to_department_id cannot be None")
             is_exists = await self.db.department.is_exists(department_id)
-            if is_exists is None:
+            if not is_exists:
                 errors.append("department with id {} does not exist".format(department_id))
+
+            if errors:
+                return "\n".join(errors)
 
             # Меняем у сотрудников подразделение
             employees = await self.db.employee.get_all_employees_into_department(department_id)
