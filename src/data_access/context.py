@@ -1,8 +1,9 @@
-from contextlib import asynccontextmanager
 from typing import Optional, Self, AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.abstractions.department_repo_protocol import DepartmentRepositoryProtocol
+from src.core.abstractions.employee_repo_protocol import EmployeeRepositoryProtocol
 from src.data_access.repositories.department_repository import DepartmentRepository
 from src.data_access.repositories.employee_repository import EmployeeRepository
 from src.data_access.session import get_session_maker
@@ -18,18 +19,18 @@ class DbContext:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-        self._department_repo: Optional[DepartmentRepository] = None
-        self._employee_repo: Optional[EmployeeRepository] = None
+        self._department_repo: Optional[DepartmentRepositoryProtocol] = None
+        self._employee_repo: Optional[EmployeeRepositoryProtocol] = None
         self._committed = False
 
     @property
-    def department(self) -> DepartmentRepository:
+    def department(self) -> DepartmentRepositoryProtocol:
         if self._department_repo is None:
             self._department_repo = DepartmentRepository(self.session)
         return self._department_repo
 
     @property
-    def employee(self) -> EmployeeRepository:
+    def employee(self) -> EmployeeRepositoryProtocol:
         if self._employee_repo is None:
             self._employee_repo = EmployeeRepository(self.session)
         return self._employee_repo
@@ -82,11 +83,3 @@ async def get_db_context() -> AsyncGenerator[DbContext, None]:
             except Exception:
                 await db.rollback()
                 raise
-
-
-
-
-
-
-
-

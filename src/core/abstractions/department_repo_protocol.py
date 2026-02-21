@@ -21,7 +21,23 @@ class DepartmentRepositoryProtocol(Protocol):
         """Проверка, существует ли такое подразделение?"""
         ...
 
-    async def update(self, depart: UpdateDepartment) -> ReadDepartment:
+    async def get_all_descendants_ids(self, department_id: int) -> set[int]:
+        """
+        Получает все ID дочерних департаментов (рекурсивно через CTE).
+        """
+        ...
+
+    async def has_cycle(self, department_id: int | None, new_parent_id: int | None) -> bool:
+        """
+        Проверяет, создаст ли установка new_parent_id цикл.
+
+        :param department_id: ID подразделения, который меняем (None для нового)
+        :param new_parent_id: Новый родитель (None если корневой)
+        :return: True если будет цикл
+        """
+        ...
+
+    async def update(self, department_id: int, depart: UpdateDepartment) -> ReadDepartment:
         """Обновляет поля у указанного подразделения."""
         ...
 

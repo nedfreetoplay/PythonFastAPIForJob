@@ -18,7 +18,7 @@ class EmployeeRepository(EmployeeRepositoryProtocol):
         # В принципе можно убрать проверку на существование подразделения
         #  перед добавлением.
 
-        result = self.session.execute(
+        result = await self.session.execute(
             select(Department).where(Department.id == employee.department_id)
         )
         if result is None:

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import String, ForeignKey, DateTime, Date
+from sqlalchemy import String, ForeignKey, DateTime, Date, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data_access.base import Base
@@ -20,7 +20,10 @@ class Department(Base):
         ForeignKey('departments.id', ondelete='SET NULL'),
         nullable=True
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utc_now)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default=utc_now
+    )
 
     # Самосвязь
     children: Mapped[list[Department]] = relationship(
@@ -60,6 +63,9 @@ class Employee(Base):
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     position: Mapped[str] = mapped_column(String(200), nullable=False)
     hired_at: Mapped[datetime.date | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=utc_now)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        TIMESTAMP(timezone=True),
+        default=utc_now
+    )
 
     department: Mapped[Department] = relationship(back_populates='employees')

@@ -75,23 +75,70 @@ class DepartmentRepository(DepartmentRepositoryProtocol):
         )
         return result.scalar_one_or_none() is not None
 
-    async def update(self, depart: UpdateDepartment) -> ReadDepartment:
+    async def get_all_descendants_ids(self, department_id: int) -> set[int]:
+        cte = (
+            select(Department.id, Department.parent_id)
+            .where(Department.id == department_id)
+            .cte(name="department_tree", recursive=True)
+        )
+
+        recursive_part = select(Department.id, Department.parent_id).join(
+            cte, Department.parent_id == cte.c.id
+        )
+
+        cte = cte.union_all(recursive_part)
+
+        # Получаем все ID кроме корневого
+        result = await self.session.execute(
+            select(cte.c.id).where(cte.c.id != department_id)
+        )
+        return {row[0] for row in result.fetchall()}
+
+    async def has_cycle(self, department_id: int | None, new_parent_id: int | None) -> bool:
+        # Новое подразделение не может создать цикл
+        if department_id is None:
+            return False
+
+        # Корневой департамент (без родителя) безопасен
+        if new_parent_id is None:
+            return False
+
+        # Нельзя быть родителем самого себя
+        if department_id == new_parent_id:
+            return True
+
+        # Получаем всех потомков текущего подразделения.
+        descendants = await self.get_all_descendants_ids(department_id)
+
+        # Если новый родитель среди потомков - будет цикл
+        return new_parent_id in descendants
+
+
+    async def update(self, department_id: int, depart: UpdateDepartment) -> ReadDepartment:
+        d = await self.session.execute(
+            select(Department).where(Department.id == department_id)
+        )
+        dept: Department | None = d.scalar_one_or_none()
+
         update_values = {}
-        if depart.need_update_name and depart.name is not None:
+        if depart.name is not None and dept.name != depart.name:
             update_values['name'] = depart.name
-        if depart.need_update_parent_id:
+        if dept.parent_id != depart.parent_id:
             update_values['parent_id'] = depart.parent_id
 
         result = await self.session.execute(
             update(Department)
-            .where(Department.id == depart.department_id)
+            .where(Department.id == department_id)
             .values(**update_values)
             .returning(Department)
         )
         return result.scalar_one_or_none()
 
     async def delete_with_cascade(self, department_id: int) -> bool:
-        depart = await self.get_by_id(department_id)
+        result = await self.session.execute(
+            select(Department).where(Department.id == department_id)
+        )
+        depart = result.scalar_one_or_none()
         if not depart:
             return False
 

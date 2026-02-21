@@ -6,15 +6,12 @@ NAME_MAX_LENGTH = 250
 
 class CreateDepartment(BaseModel):
     name: str
-    parent_id: int
+    parent_id: int | None
 
 
 class UpdateDepartment(BaseModel):
-    department_id: int
     name: str | None = None
     parent_id: int | None = None
-    need_update_name: bool = False
-    need_update_parent_id: bool = False
 
 
 class ReadDepartment(BaseModel):

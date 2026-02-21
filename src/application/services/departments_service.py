@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from src.core.abstractions.departments_service_protocol import DepartmentsServiceProtocol, DeleteMode
 from src.core.models.department import CreateDepartment, ReadDepartment, UpdateDepartment
@@ -13,14 +13,27 @@ class DepartmentsService(DepartmentsServiceProtocol):
     async def create_department(self, department: CreateDepartment) -> ReadDepartment:
         return await self.db.department.add(department)
 
-    async def get_department(self, department_id: int) -> ReadDepartment:
+    async def get_department(self, department_id: int) -> Optional[ReadDepartment]:
         return await self.db.department.get_by_id(department_id)
 
     async def get_department_children(self, department_id: int) -> List[ReadDepartment]:
         return await self.db.department.get_children(department_id)
 
-    async def update_department(self, depart: UpdateDepartment) -> ReadDepartment:
-        return await self.db.department.update(depart)
+    async def update_department(self, department_id: int, update_dto: UpdateDepartment) -> ReadDepartment:
+        department = await self.db.department.get_by_id(department_id)
+        if not department:
+            raise ValueError("department with id {} does not exist".format(department_id))
+
+        # Проверяем, меняется ли parent_id
+        if update_dto.parent_id is not None and update_dto.parent_id != department.parent_id:
+            # Проверка на цикл
+            if await self.db.department.has_cycle(department_id, update_dto.parent_id):
+                raise ValueError(
+                    f"Нельзя установить родителя: департамент {update_dto.parent_id} "
+                    f"находится в поддереве департамента {department_id}"
+                )
+
+        return await self.db.department.update(department_id, update_dto)
 
     async def delete_department(self, department_id: int, mode: DeleteMode, reassign_to_department_id: int | None) -> str:
 
