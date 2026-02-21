@@ -16,6 +16,7 @@ from src.core.abstractions.employees_service_protocol import EmployeesServicePro
 from src.core.models.department import CreateDepartment, UpdateDepartment, ReadDepartment
 from src.core.models.employee import CreateEmployee, ReadEmployee
 from src.data_access.session import lifespan
+from src.dependencies import get_employees_service, get_departments_service
 
 app = FastAPI(
     title="Department",
@@ -38,7 +39,7 @@ async def health_check():
 )
 async def departments(
     new_depart: apiCreateDepartment,
-    depart_service: DepartmentsServiceProtocol = Depends(DepartmentsService),
+    depart_service: DepartmentsServiceProtocol = Depends(get_departments_service),
 ) -> ResponseCreateDepartment:
     """Создать подразделение"""
     create_depart = CreateDepartment(
@@ -70,7 +71,7 @@ async def departments(
 async def create_employees_in_department(
     id: int,
     create_employee: apiCreateEmployee,
-    employees_service: EmployeesServiceProtocol = Depends(EmployeesService),
+    employees_service: EmployeesServiceProtocol = Depends(get_employees_service),
 ) -> ResponseCreateEmployee:
     """Создать сотрудника в подразделении"""
     create_employee = CreateEmployee(
@@ -106,8 +107,8 @@ async def create_employees_in_department(
 async def get_department_by_id(
     id: int,
     query: DepartmentGetRequest,
-    depart_service: DepartmentsServiceProtocol = Depends(DepartmentsService),
-    employees_service: EmployeesServiceProtocol = Depends(EmployeesService),
+    depart_service: DepartmentsServiceProtocol = Depends(get_departments_service),
+    employees_service: EmployeesServiceProtocol = Depends(get_employees_service),
 ):
     """Получить подразделение (детали + сотрудники + поддерево)"""
     try:
@@ -161,7 +162,7 @@ async def get_department_by_id(
 async def department_move(
     id: int,
     move_department: apiMoveDepartment,
-    depart_service: DepartmentsServiceProtocol = Depends(DepartmentsService),
+    depart_service: DepartmentsServiceProtocol = Depends(get_departments_service),
 ) -> ResponseMoveDepartment:
     """Переместить подразделение в другое (изменить parent)"""
     update_depart = UpdateDepartment(
@@ -194,7 +195,7 @@ async def department_move(
 async def department_remove(
     id: int,
     query: DepartmentDeleteRequest,
-    depart_service: DepartmentsServiceProtocol = Depends(DepartmentsService),
+    depart_service: DepartmentsServiceProtocol = Depends(get_departments_service),
 ):
     """Удалить подразделение"""
     mode = query.mode
