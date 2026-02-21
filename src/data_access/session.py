@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -13,8 +14,14 @@ from sqlalchemy.ext.asyncio import (
 _engine: AsyncEngine | None = None
 _async_session_maker: async_sessionmaker[AsyncSession] | None = None
 
-def create_database_url(username: str, password: str, host: str) -> str:
-    return f"postgresql+asyncpg://{username}:{password}@{host}"
+def create_database_url(
+        username: str,
+        password: str,
+        host: str,
+        port: str,
+        database: str,
+) -> str:
+    return f"postgresql+asyncpg://{username}:{password}@{host}:{port}/{database}"
 
 def init_db(database_url: str) -> None:
     """
@@ -99,7 +106,18 @@ async def lifespan(app: FastAPI):
     app = FastAPI(lifespan=lifespan)
     ```
     """
-    yield # FastAPI работает
+    # Startup
+    database_url = create_database_url(
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME")
+    )
+    init_db(database_url)
+
+    # FastAPI работает
+    yield
 
     # Shutdown
     await dispose_db()

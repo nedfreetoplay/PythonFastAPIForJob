@@ -4,8 +4,9 @@ from sqlalchemy import String, ForeignKey, DateTime, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.data_access.base import Base
-from src.utils import utc_now
 
+def utc_now():
+    datetime.datetime.now(datetime.UTC)
 
 class Department(Base):
     """

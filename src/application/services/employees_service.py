@@ -1,10 +1,11 @@
 from typing import List
 
+from src.core.abstractions.employees_service_protocol import EmployeesServiceProtocol
 from src.core.models.employee import CreateEmployee, ReadEmployee
 from src.data_access.context import DbContext
 
 
-class EmployeesService:
+class EmployeesService(EmployeesServiceProtocol):
 
     def __init__(self, db: DbContext):
         self.db = db

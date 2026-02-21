@@ -1,16 +1,11 @@
-from enum import Enum
 from typing import List
 
-from src.core.models.department import CreateDepartment, ReadDepartment, create_department, UpdateDepartment
+from src.core.abstractions.departments_service_protocol import DepartmentsServiceProtocol, DeleteMode
+from src.core.models.department import CreateDepartment, ReadDepartment, UpdateDepartment
 from src.data_access.context import DbContext
 
 
-class DeleteMode(str, Enum):
-    CASCADE =  "cascade"
-    REASSIGN = "reassign"
-
-
-class DepartmentsService:
+class DepartmentsService(DepartmentsServiceProtocol):
 
     def __init__(self, db: DbContext):
         self.db = db
@@ -27,12 +22,7 @@ class DepartmentsService:
     async def update_department(self, depart: UpdateDepartment) -> ReadDepartment:
         return await self.db.department.update(depart)
 
-    async def delete_department(
-        self,
-        department_id: int,
-        mode: DeleteMode,
-        reassign_to_department_id: int | None
-    ) -> str:
+    async def delete_department(self, department_id: int, mode: DeleteMode, reassign_to_department_id: int | None) -> str:
 
         errors: List[str] = []
         result = None

@@ -1,13 +1,11 @@
 from contextlib import asynccontextmanager
 from typing import Optional, Self, AsyncGenerator
 
-from poetry.console.commands import self
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.models.employee import ReadEmployee
 from src.data_access.repositories.department_repository import DepartmentRepository
 from src.data_access.repositories.employee_repository import EmployeeRepository
-from src.data_access.session import get_session, get_session_maker
+from src.data_access.session import get_session_maker
 
 
 class DbContext:

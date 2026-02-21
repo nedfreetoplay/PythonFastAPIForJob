@@ -4,7 +4,6 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.abstractions.department_repo_protocol import DepartmentRepositoryProtocol
-from src.core.models import department
 from src.core.models.department import ReadDepartment, CreateDepartment, UpdateDepartment
 from src.data_access.entities.entities import Department
 

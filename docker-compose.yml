@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: job_db
+    environment:
+      POSTGRES_USER: postgres_user
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: postgres_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres_user -d postgres_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  api:
+    build: .
+    container_name: job_api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres_user
+      DB_PASSWORD: postgres_password
+      DB_NAME: postgres_db
+
+      FASTAPI_HOST: 0.0.0.0
+      FASTAPI_PORT: 8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+    # Если приложение пишет логи в консоль, это будет видно в docker-compose logs
+    tty: true
+    stdin_open: true
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
