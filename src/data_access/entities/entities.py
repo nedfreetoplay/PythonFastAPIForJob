@@ -6,7 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.data_access.base import Base
 
 def utc_now():
-    datetime.datetime.now(datetime.UTC)
+    return datetime.datetime.now(datetime.UTC)
 
 class Department(Base):
     """

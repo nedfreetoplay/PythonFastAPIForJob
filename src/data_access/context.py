@@ -17,8 +17,9 @@ class DbContext:
 
     def __init__(self, session: AsyncSession):
         self.session = session
-        self._department_repo = Optional[DepartmentRepository] = None
-        self._employee_repo = Optional[EmployeeRepository] = None
+
+        self._department_repo: Optional[DepartmentRepository] = None
+        self._employee_repo: Optional[EmployeeRepository] = None
         self._committed = False
 
     @property
@@ -60,7 +61,6 @@ class DbContext:
         await self.close()
 
 
-@asynccontextmanager
 async def get_db_context() -> AsyncGenerator[DbContext, None]:
     """
     Dependency для FastAPI.
