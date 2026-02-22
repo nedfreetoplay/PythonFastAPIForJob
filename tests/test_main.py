@@ -344,12 +344,12 @@ class TestGetDepartment:
         assert errors == ""
         await employees_service.repository.add(new_emp)
 
-        response = await client.get(f"/departments/{dept.id}?include_employees=true")
+        response = await client.get(f"/departments/{dept.id}", params={"include_employees": True})
 
         assert response.status_code == 200
         data = response.json()
-        # Структура зависит от реализации main.py
         assert "employees" in data or "department" in data
+        assert len(data["employees"]) == 2
 
 
 # noinspection PyShadowingNames

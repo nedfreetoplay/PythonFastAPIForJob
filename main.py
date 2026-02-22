@@ -130,7 +130,11 @@ async def get_department_by_id(
 
         # Если нужны сотрудники
         if include_employees:
-            # Собираем всех сотрудников
+            # 1. Сначала собираем сотрудников из самого корневого подразделения
+            root_employees = await employees_service.get_all_employees_into_department(dept.id)
+            all_employees.extend(root_employees)
+
+            # 2. Затем собираем сотрудников из всех дочерних подразделений
             for child in all_children:
                 employees = await employees_service.get_all_employees_into_department(child.id)
                 all_employees.extend(employees)
@@ -303,6 +307,14 @@ async def departments(
 async def health_check():
     """Проверка работоспособности"""
     return {"status": "ok"}
+
+@app.get(
+    "/",
+    description="Проверка работоспособности"
+)
+async def health_check():
+    """Проверка работоспособности"""
+    return "Сервер работает"
 
 
 if __name__ == '__main__':
