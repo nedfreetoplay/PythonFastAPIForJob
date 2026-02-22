@@ -38,7 +38,12 @@ alembic revision --autogenerate -m "My migration"
 alembic upgrade head
 ```
 
-# Тестирование
+# Разработка и тестирование
+
+Зависимости для разработки
+```
+pip install -r requirements.txt -r requirements-dev.txt
+```
 
 Запустить автотесты
 ```
