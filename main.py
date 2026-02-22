@@ -3,6 +3,7 @@ from typing import List, Annotated, Literal
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Query
 from starlette import status
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from src.api.contracts.create_department import CreateDepartment as apiCreateDepartment, ResponseCreateDepartment
 from src.api.contracts.create_employee import CreateEmployee as apiCreateEmployee, ResponseCreateEmployee
@@ -10,8 +11,9 @@ from src.api.contracts.get_department import DepartmentGetResponse
 from src.api.contracts.move_department import MoveDepartment as apiMoveDepartment, ResponseMoveDepartment
 from src.core.abstractions.departments_service_protocol import DeleteMode, DepartmentsServiceProtocol
 from src.core.abstractions.employees_service_protocol import EmployeesServiceProtocol
-from src.core.models.department import CreateDepartment, UpdateDepartment, ReadDepartment
-from src.core.models.employee import CreateEmployee, ReadEmployee
+from src.core.models.department import CreateDepartment, UpdateDepartment, ReadDepartment, create_department, \
+    create_update_department
+from src.core.models.employee import CreateEmployee, ReadEmployee, create_employee
 from src.data_access.session import lifespan
 from src.dependencies import get_employees_service, get_departments_service
 
@@ -39,7 +41,7 @@ async def create_employees_in_department(
             dept = await depart_service.get_department(id)
             if not dept:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    status_code=status.HTTP_404_NOT_FOUND,
                     detail={
                         "error": "department_not_found",
                         "message": f"Департамент с id={id} не найден",
@@ -48,14 +50,19 @@ async def create_employees_in_department(
                 )
 
         # Если всё ок — создаём
-        body = CreateEmployee(
+        new_emp, errors = create_employee(
             department_id=id,
             full_name=body.full_name,
             position=body.position,
             hired_at=body.hired_at,
         )
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=errors
+            )
 
-        result = await employees_service.create_employee(body)
+        result = await employees_service.create_employee(new_emp)
 
         response = ResponseCreateEmployee(
             id=result.id,
@@ -90,7 +97,7 @@ async def get_department_by_id(
             dept = await depart_service.get_department(id)
             if not dept:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    status_code=status.HTTP_404_NOT_FOUND,
                     detail={
                         "error": "department_not_found",
                         "message": f"Департамент с id={id} не найден",
@@ -161,10 +168,15 @@ async def department_move(
                 detail="department_not_found"
             )
 
-        update_depart = UpdateDepartment(
+        update_depart, errors = create_update_department(
             name=body.name,
             parent_id=body.parent_id
         )
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=errors
+            )
 
         result = await depart_service.update_department(id, update_depart)
 
@@ -184,7 +196,8 @@ async def department_move(
 
 @app.delete(
     "/departments/{id}",
-    description="Удалить подразделение"
+    description="Удалить подразделение",
+    status_code=status.HTTP_204_NO_CONTENT
 )
 async def department_remove(
     id: int,
@@ -193,6 +206,12 @@ async def department_remove(
     depart_service: DepartmentsServiceProtocol = Depends(get_departments_service),
 ):
     """Удалить подразделение"""
+    dept = await depart_service.get_department(id)
+    if dept is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Department {} not found".format(id)
+        )
 
     # Проверка query параметров
     if mode == "reassign" and reassign_to_department_id is None:
@@ -228,8 +247,6 @@ async def department_remove(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=errors
             )
-        else:
-            return status.HTTP_204_NO_CONTENT
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -253,10 +270,15 @@ async def departments(
             if result is not None:
                 depart_id = result.id
 
-        create_depart = CreateDepartment(
+        create_depart, errors = create_department(
             name=body.name,
             parent_id=depart_id,
         )
+        if errors:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=errors
+            )
 
         result = await depart_service.create_department(create_depart)
 

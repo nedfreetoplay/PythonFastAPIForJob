@@ -1,12 +1,10 @@
 import datetime
 
-from pydantic import BaseModel, Field, field_validator
-
-from src.core.models.department import NAME_MAX_LENGTH
+from pydantic import BaseModel, field_validator
 
 
 class MoveDepartment(BaseModel):
-    name: str | None = Field(..., max_length=NAME_MAX_LENGTH)
+    name: str | None = None
     parent_id: int | None = None
 
     @field_validator('name', mode='before')

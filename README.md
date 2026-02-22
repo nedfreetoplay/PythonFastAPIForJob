@@ -37,3 +37,10 @@ alembic revision --autogenerate -m "My migration"
 ```
 alembic upgrade head
 ```
+
+# Тестирование
+
+Запустить автотесты
+```
+pytest
+```

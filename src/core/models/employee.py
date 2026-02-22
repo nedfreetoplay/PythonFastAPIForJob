@@ -30,15 +30,16 @@ def create_employee(
     """
     Создание сотрудника
 
-    :param department_id: ID депортамента к которому приписан сотрудник
+    :param department_id: ID подразделения к которому приписан сотрудник
     :param full_name: Полное имя сотрудника
     :param position: Позиция сотрудника
     :param hired_at: Дата найма сотрудника
     :return: CreateEmployee и errors
     """
     errors = []
-
-    if full_name is None or len(full_name) > FULLNAME_MAX_LENGTH:
+    if full_name is None or len(full_name) == 0:
+        errors.append("Full Name не может быть пустым")
+    if full_name is not None and len(full_name) > FULLNAME_MAX_LENGTH:
         errors.append("Full Name cannot be longer than {}".format(FULLNAME_MAX_LENGTH))
 
     if position is None or len(position) > POSITION_MAX_LENGTH:
